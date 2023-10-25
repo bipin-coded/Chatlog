@@ -5,6 +5,7 @@ require('./db/connection');
 
 // Imports Files 
 const auth = require('./routes/auth');
+const dashboard = require('./routes/dashboard');
 
 
 // App Use
@@ -17,7 +18,8 @@ app.get('/', (req, res) => {
     res.send('Welcome');
 });
 
-app.use('/auth', auth);
+app.use('/api', auth);
+app.use('/api', dashboard);
 
 // App Listener
 const port = process.env.PORT || 8000;

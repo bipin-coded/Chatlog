@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
-router.post('/register', async (req, res) => {
+router.post('/auth/register', async (req, res) => {
     try {
         const { fullName, email, password } = req.body;
 
@@ -17,7 +17,7 @@ router.post('/register', async (req, res) => {
                 res.status(400).send('User already exists.');
             } else {
                 const newUser = new Users({ fullName, email, password });
-                newUser.save();
+                await newUser.save();
                 res.status(200).send('User registered successfully.');
             }
         }
@@ -27,7 +27,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/auth/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
