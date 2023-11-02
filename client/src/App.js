@@ -7,7 +7,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 function App() {
   return (
     <Routes>
-      <Route element={<ProtectedRoute />}>
+      <Route element={<ProtectedRoute auth={true} />}>
         <Route element={<Dashboard />} path="/" exact />
       </Route>
       <Route path="/users/sign_in" element={<Form isSignInPage={true} />} />

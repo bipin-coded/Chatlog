@@ -1,4 +1,5 @@
 const express = require('express');
+var cors = require('cors');
 
 // Database connection
 require('./db/connection');
@@ -12,6 +13,7 @@ const dashboard = require('./routes/dashboard');
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cors());
 
 // Routes
 app.get('/', (req, res) => {

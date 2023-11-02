@@ -40,7 +40,7 @@ router.post('/auth/login', async (req, res) => {
             } else {
                 const validPassword = bcrypt.compareSync(password, user.password);
                 if (!validPassword) {
-                    res.status(400).send('User email or password is incorrect');
+                    res.status(400).send('User email or password is incorrect.');
                 } else {
                     const payload = {
                         userId: user._id,
@@ -53,11 +53,8 @@ router.post('/auth/login', async (req, res) => {
                         await Users.updateOne({ _id: user._id }, {
                             $set: { token }
                         })
-                        Users.save();
-                        next();
+                        return res.status(200).json({ user: { id: user._id, fullName: user.fullName, email: user.email }, token: token });
                     });
-
-                    res.status(200).json({ user: { fullName: user.fullName, email: user.email }, token: user.token });
                 }
             }
         }
