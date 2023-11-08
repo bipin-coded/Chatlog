@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Avatar from '../../assets/avatar.svg';
 import Input from '../../components/Input';
+import { io } from 'socket.io-client';
+const { v4: uuidv4 } = require('uuid');
 
 function Dashboard() {
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('user:detail')));
@@ -8,11 +10,36 @@ function Dashboard() {
     const [conversations, setConversations] = useState([]);
     const [message, setMessage] = useState();
     const [messages, setMessages] = useState({});
+    const [socket, setSocket] = useState(null);
+    const messageRef = useRef(null);
+
+    useEffect(() => {
+        setSocket(io('http://localhost:8001'));
+        console.log(process.env);
+    }, []);
+
+    useEffect(() => {
+        socket?.emit('addUser', user?.id);
+        socket?.on('getUsers', users => {
+            // console.log('Active users :>>', users);
+        });
+
+        socket?.on('getMessage', obj => {
+            setMessages(prev => ({
+                ...prev,
+                data: [...prev.data, { user: obj.user, message: obj.message, _id: uuidv4() }]
+            }));
+        });
+    }, [socket]);
+
+    useEffect(() => {
+        messageRef?.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages?.data]);
 
     useEffect(() => {
         const loggedInUser = JSON.parse(localStorage.getItem('user:detail'));
         const fetchConversations = async () => {
-            const res = await fetch(`http://localhost:8000/api/conversation/${loggedInUser?.id}`, {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/conversation/${loggedInUser?.id}`, {
                 method: 'GET',
                 headers: {
                     'content-type': 'application/json'
@@ -26,7 +53,7 @@ function Dashboard() {
 
     useEffect(() => {
         const fetchUsers = async () => {
-            const res = await fetch(`http://localhost:8000/api/users/${user.id}`, {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/users/${user.id}`, {
                 method: 'GET',
                 headers: { 'content-type': 'application/json' }
             });
@@ -38,7 +65,7 @@ function Dashboard() {
 
     // Get all messages by conversationId
     const fetchMessages = async (conversationId, receiver) => {
-        const res = await fetch(`http://localhost:8000/api/message/${conversationId}?senderId=${user?.id}&receiverId=${receiver?.id}`, {
+        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/message/${conversationId}?senderId=${user?.id}&receiverId=${receiver?.id}`, {
             method: 'GET',
             headers: {
                 'content-type': 'application/json'
@@ -50,24 +77,28 @@ function Dashboard() {
 
     // Send message
     const sendMessage = async (e) => {
-        await fetch('http://localhost:8000/api/message', {
+
+        const payload = {
+            conversationId: messages?.conversationId,
+            senderId: user?.id,
+            message,
+            receiverId: messages?.receiver?.id
+        };
+        socket?.emit('sendMessage', payload)
+
+        await fetch(`${process.env.REACT_APP_API_URL}/api/message`, {
             method: 'POST',
             headers: {
                 'content-type': 'application/json'
             },
-            body: JSON.stringify({
-                conversationId: messages?.conversationId,
-                senderId: user?.id,
-                message,
-                receiverId: messages?.receiver?.id
-            })
+            body: JSON.stringify(payload)
         });
         setMessage('');
     };
 
     return (
         <div className='w-screen flex'>
-            <div className='w-[25%] h-screen bg-secondary '>
+            <div className='w-[25%] h-screen bg-secondary overflow-y-scroll'>
                 <div className='flex  items-center my-6 mx-14'>
                     <div className='border border-primary p-[2px] rounded-full'><img src={Avatar} alt={Avatar} width={75} height={75} /></div>
                     <div className='ml-4'>
@@ -121,9 +152,14 @@ function Dashboard() {
                     <div className='p-10'>
                         {
                             messages?.data?.length > 0 ? messages.data.map(({ _id, message, user: { id } = {} }) => {
-                                return (<div key={_id} className={`max-w-[40%] rounded-b-xl p-4 mb-6 ${id === user?.id ? 'bg-primary text-white rounded-tl-xl ml-auto' : 'bg-secondary rounded-tr-xl'}`}>
-                                    {message}
-                                </div>)
+                                return (
+                                    <div key={_id}>
+                                        <div className={`max-w-[40%] rounded-b-xl p-4 mb-6 ${id === user?.id ? 'bg-primary text-white rounded-tl-xl ml-auto' : 'bg-secondary rounded-tr-xl'}`}>
+                                            {message}
+                                        </div>
+                                        <div ref={messageRef}></div>
+                                    </div>
+                                )
                             }) : <div className='text-center text-lg font-semibold mt-24'>No messages or No conversation selected</div>
                         }
                     </div>
@@ -150,7 +186,7 @@ function Dashboard() {
                 </div>
             </div>
 
-            <div className='w-[25%] h-screen bg-light px-8 py-16'>
+            <div className='w-[25%] h-screen bg-light px-8 py-16 overflow-y-scroll'>
                 <div className='text-primary text-lg'>Peoples</div>
                 {
                     users?.length > 0 ?
