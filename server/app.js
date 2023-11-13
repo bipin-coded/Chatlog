@@ -2,7 +2,7 @@ const express = require('express');
 var cors = require('cors');
 const io = require('socket.io')(8001, {
     cors: {
-        origin: SOCKET_ORIGIN_URL, // http://localhost:3000
+        origin: process.env.SOCKET_ORIGIN_URL, // http://localhost:3000
     }
 });
 require("dotenv").config();
