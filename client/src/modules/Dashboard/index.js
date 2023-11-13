@@ -14,7 +14,7 @@ function Dashboard() {
     const messageRef = useRef(null);
 
     useEffect(() => {
-        setSocket(io('http://localhost:8001'));
+        setSocket(io(`${process.env.REACT_APP_PUBLIC_URL}:8001`));
         console.log(process.env);
     }, []);
 
